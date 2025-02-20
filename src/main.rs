@@ -92,7 +92,8 @@ fn client() {
             
             loop {
                 //set a 50 byte buffer
-                let mut buffer = [0 as u8; 50];
+                // increasing buffer to 200?
+                let mut buffer = [0 as u8; 200];
 
                 match stream.read(&mut buffer) {
                     Ok(size) if size > 0 => {
