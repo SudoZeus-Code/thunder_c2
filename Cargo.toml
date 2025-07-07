@@ -1,0 +1,16 @@
+[package]
+name = "thunder_c2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes-gcm = "0.10.3"
+base64 = "0.22.1"
+inquire = "0.7.5"
+lazy_static = "1.5.0"
+
+#[profile.release]
+#opt-level = "s"
+#strip = true
+#lto = true
+#panic = "abort"
